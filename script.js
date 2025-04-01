@@ -1,116 +1,110 @@
-// Função para carregar produtos do LocalStorage
-function carregarProdutos() {
-    return JSON.parse(localStorage.getItem("estoque")) || [];
-}
-
-// Função para salvar produtos no LocalStorage
-function salvarProdutos(produtos) {
-    localStorage.setItem("estoque", JSON.stringify(produtos));
-}
-
-// Função para adicionar um novo produto
-function adicionarProduto(nome, quantidade, validade, lote) {
-    let produtos = carregarProdutos();
-    produtos.push({ nome, quantidade, validade, lote });
-    salvarProdutos(produtos);
-}
-
-// Função para remover um produto
-function removerProduto(index) {
-    let produtos = carregarProdutos();
-    produtos.splice(index, 1);
-    salvarProdutos(produtos);
-    exibirProdutos();
-}
-
-// Função para listar todos os produtos ordenados por validade e nome
-function listarProdutos() {
-    return carregarProdutos().sort((a, b) => {
-        let validadeA = new Date(a.validade);
-        let validadeB = new Date(b.validade);
-        
-        if (validadeA - validadeB !== 0) {
-            return validadeA - validadeB; // Ordenação por validade
-        }
-
-        return a.nome.localeCompare(b.nome); // Ordenação por nome
-    });
-}
-
-// Função para exibir produtos nos contêineres
-function exibirProdutos() {
-    let produtos = listarProdutos();
-    let hoje = new Date();
-
-    let listaValidos = document.getElementById("listaValidos");
-    let listaProximoVencer = document.getElementById("listaProximoVencer");
-    let listaVencidos = document.getElementById("listaVencidos");
-
-    listaValidos.innerHTML = "";
-    listaProximoVencer.innerHTML = "";
-    listaVencidos.innerHTML = "";
-
-    produtos.forEach((produto, index) => {
-        let dataValidade = new Date(produto.validade);
-        let diferencaDias = Math.ceil((dataValidade - hoje) / (1000 * 60 * 60 * 24));
-        let classe = "";
-        let mensagem = "";
-
-        if (diferencaDias < 0) {
-            classe = "vencido";
-            mensagem = "Produto vencido!";
-        } else if (diferencaDias === 0) {
-            classe = "proximo-vencer";
-            mensagem = "Vence hoje!";
-        } else if (diferencaDias <= 7) {
-            classe = "proximo-vencer";
-            mensagem = `Vence em ${diferencaDias} dias!`;
-        } else {
-            classe = "valido";
-            mensagem = "Produto válido";
-        }
-
-        let row = `<div class="col-md-4 mb-3">
-            <div class="card ${classe}">
-                <div class="card-body">
-                    <h5 class="card-title">${produto.nome}</h5>
-                    <p>Quantidade: ${produto.quantidade}</p>
-                    <p>Validade: ${produto.validade} <br> <small class="text-danger">${mensagem}</small></p>
-                    <p>Lote: ${produto.lote}</p>
-                    <button class="btn btn-danger btn-sm" onclick="removerProduto(${index})"><i class="fas fa-trash-alt"></i> Remover</button>
-                </div>
-            </div>
-        </div>`;
-
-        // Distribuir os produtos nos contêineres correspondentes
-        if (classe === "vencido") {
-            listaVencidos.innerHTML += row;
-        } else if (classe === "proximo-vencer") {
-            listaProximoVencer.innerHTML += row;
-        } else {
-            listaValidos.innerHTML += row;
-        }
-    });
-}
-
-// Função para adicionar produto pela UI
+// Função para adicionar o produto na lista
 function adicionarProdutoUI() {
-    let nome = document.getElementById("nome").value;
-    let quantidade = parseInt(document.getElementById("quantidade").value);
-    let validade = document.getElementById("validade").value;
-    let lote = document.getElementById("lote").value;
+    const codigo = document.getElementById('codigo').value;
+    const nome = document.getElementById('nome').value;
+    const quantidade = document.getElementById('quantidade').value;
+    const fabricacao = document.getElementById('fabricacao').value;
+    const validade = document.getElementById('validade').value;
+    const unidade = document.getElementById('unidade').value;
+    const lote = document.getElementById('lote').value;
 
-    let hoje = new Date().toISOString().split('T')[0];
-    if (validade < hoje) {
-        alert("Erro: Você não pode adicionar um produto já vencido!");
+    if (!codigo || !nome || !quantidade || !fabricacao || !validade || !unidade || !lote) {
+        alert("Por favor, preencha todos os campos!");
         return;
     }
 
-    if (nome && quantidade > 0 && validade && lote) {
-        adicionarProduto(nome, quantidade, validade, lote);
-        exibirProdutos();
-    }
+    const novaLinha = document.createElement('tr');
+    novaLinha.innerHTML = `
+        <td>${codigo}</td>
+        <td>${nome}</td>
+        <td>${quantidade}</td>
+        <td>${fabricacao}</td>
+        <td>${validade}</td>
+        <td>${unidade}</td>
+        <td>${lote}</td>
+    `;
+
+    document.getElementById('listaProdutos').appendChild(novaLinha);
+
+    // Atualizar os relatórios
+    atualizarRelatorios();
+
+    // Limpar os campos
+    document.getElementById('codigo').value = '';
+    document.getElementById('nome').value = '';
+    document.getElementById('quantidade').value = '';
+    document.getElementById('fabricacao').value = '';
+    document.getElementById('validade').value = '';
+    document.getElementById('unidade').value = '';
+    document.getElementById('lote').value = '';
 }
 
-// Exibir produtos ao carregar a página
-document.addEventListener("DOMContentLoaded", exibirProdutos);
+// Função para atualizar os relatórios
+function atualizarRelatorios() {
+    let total = 0;
+    let vencidos = 0;
+    let proximos = 0;
+
+    const produtos = document.querySelectorAll('#listaProdutos tr');
+
+    produtos.forEach(produto => {
+        const tdValidade = produto.cells[4];
+        const validade = new Date(tdValidade.innerText);
+
+        total++;
+
+        // Verificar vencidos e próximos de vencer
+        if (validade < new Date()) {
+            vencidos++;
+            produto.classList.add('vencido');
+        } else if (validade < new Date(new Date().setDate(new Date().getDate() + 30))) {
+            proximos++;
+            produto.classList.add('proximo');
+        }
+    });
+
+    document.getElementById('totalProdutos').textContent = total;
+    document.getElementById('produtosVencidos').textContent = vencidos;
+    document.getElementById('produtosProximos').textContent = proximos;
+}
+
+// Função de busca de produto
+function buscarProduto() {
+    const searchTerm = document.getElementById('search').value.toLowerCase();
+    const produtos = document.querySelectorAll('#listaProdutos tr');
+
+    produtos.forEach(produto => {
+        const nomeProduto = produto.cells[1].innerText.toLowerCase();
+        if (nomeProduto.includes(searchTerm)) {
+            produto.style.display = '';
+        } else {
+            produto.style.display = 'none';
+        }
+    });
+}
+
+// Função para exportar para Excel
+function exportarParaExcel() {
+    let tabela = document.querySelector("table");
+    let wb = XLSX.utils.table_to_book(tabela, {sheet:"Relatório"});
+    XLSX.writeFile(wb, "Relatorio_Estoque.xlsx");
+}
+
+// Função para exportar para Word
+function exportarParaWord() {
+    let tabela = document.querySelector("table").outerHTML;
+    let logo = '<img src="download.png" style="max-width: 150px;">';
+    let conteudo = `
+        <html>
+        <head><meta charset='UTF-8'></head>
+        <body>
+            ${logo}
+            <h2>Relatório de Controle de Estoque</h2>
+            ${tabela}
+        </body>
+        </html>
+    `;
+    let blob = new Blob(['\ufeff', conteudo], {type: 'application/msword'});
+    saveAs(blob, "Relatorio_Estoque.doc");
+}
+
