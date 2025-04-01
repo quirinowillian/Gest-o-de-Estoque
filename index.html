@@ -10,22 +10,35 @@
 <body>
     <div class="container mt-5">
         <div class="card shadow-lg p-4">
-            <!-- Logo da empresa -->
             <div class="text-center mb-4">
-                <!-- Substitua 'images/logo_empresa.png' pelo caminho correto da sua imagem -->
-                <img src="download.png" alt="download.png" class="img-fluid" style="max-width: 250px; height: auto;">
+                <img src="download.png" alt="logo" class="img-fluid" style="max-width: 250px; height: auto;">
             </div>
             
             <h1 class="text-center text-primary mb-4">Controle de Estoque</h1>
+            
+            <div class="mb-4">
+                <label for="uploadExcel" class="form-label">Importar Planilha Excel</label>
+                <input type="file" id="uploadExcel" class="form-control">
+            </div>
+            
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <input type="text" id="codigo" class="form-control" placeholder="Código">
+                </div>
+                <div class="col-md-3">
                     <input type="text" id="nome" class="form-control" placeholder="Nome do Produto">
                 </div>
                 <div class="col-md-2">
                     <input type="number" id="quantidade" class="form-control" placeholder="Quantidade">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <input type="date" id="fabricacao" class="form-control" placeholder="Fabricação">
+                </div>
+                <div class="col-md-2">
                     <input type="date" id="validade" class="form-control" placeholder="Validade">
+                </div>
+                <div class="col-md-2">
+                    <input type="text" id="unidade" class="form-control" placeholder="Unidade">
                 </div>
                 <div class="col-md-2">
                     <input type="text" id="lote" class="form-control" placeholder="Lote">
@@ -34,52 +47,56 @@
                     <button class="btn btn-success" onclick="adicionarProdutoUI()">+</button>
                 </div>
             </div>
-
-            <!-- Contêineres para os produtos -->
+            
             <div class="mt-4">
-                <div id="validos" class="container-fluid">
-                    <h3>Produtos Válidos</h3>
-                    <div class="row" id="listaValidos"></div>
-                </div>
-
-                <div id="proximoVencer" class="container-fluid mt-4">
-                    <h3>Produtos Próximos de Vencer</h3>
-                    <div class="row" id="listaProximoVencer"></div>
-                </div>
-
-                <div id="vencidos" class="container-fluid mt-4">
-                    <h3>Produtos Vencidos</h3>
-                    <div class="row" id="listaVencidos"></div>
-                </div>
+                <h3>Relatórios</h3>
+                <p>Total de Produtos: <span id="totalProdutos">0</span></p>
+                <p>Produtos Vencidos: <span id="produtosVencidos">0</span></p>
+                <p>Produtos Próximos de Vencer: <span id="produtosProximos">0</span></p>
+                <button class="btn btn-primary" onclick="exportarParaExcel()">Exportar para Excel</button>
+                <button class="btn btn-secondary" onclick="exportarParaWord()">Exportar para Word</button>
+            </div>
+            
+            <div class="mt-4">
+                <h3>Lista de Produtos</h3>
+                <input type="text" id="search" class="form-control mb-3" placeholder="Buscar produto..." onkeyup="buscarProduto()">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nome</th>
+                            <th>Quantidade</th>
+                            <th>Fabricação</th>
+                            <th>Validade</th>
+                            <th>Unidade</th>
+                            <th>Lote</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listaProdutos"></tbody>
+                </table>
             </div>
         </div>
     </div>
-<!-- Footer -->
-<footer class="bg-dark text-white text-center p-4 mt-5">
-    <div class="container">
-        <!-- Texto principal -->
-        <p>&copy; 2025 Controle de Estoque | Todos os direitos reservados.</p>
-        <p>Desenvolvido por <strong>Willian Quirino</strong></p>
 
-        <!-- Redes sociais -->
-        <div class="social-links">
-            <a href="https://www.linkedin.com/in/willian-quirino-dev" target="_blank" class="text-white me-3">
-                <i class="bi bi-linkedin"></i> LinkedIn
-            </a>
-            <a href="https://github.com/quirinowillian" target="_blank" class="text-white">
-                <i class="bi bi-github"></i> GitHub
-            </a>
+    <footer class="bg-dark text-white text-center p-4 mt-5">
+        <div class="container">
+            <p>&copy; 2025 Controle de Estoque | Todos os direitos reservados.</p>
+            <p>Desenvolvido por <strong>Willian Quirino</strong></p>
+            <div class="social-links">
+                <a href="https://www.linkedin.com/in/willian-quirino-dev" target="_blank" class="text-white me-3">
+                    <i class="bi bi-linkedin"></i> LinkedIn
+                </a>
+                <a href="https://github.com/quirinowillian" target="_blank" class="text-white">
+                    <i class="bi bi-github"></i> GitHub
+                </a>
+            </div>
+            <p class="mt-2 small">Esse site utiliza cookies para melhorar a sua experiência.</p>
         </div>
+    </footer>
 
-        <!-- Aviso de privacidade -->
-        <p class="mt-2 small">Esse site utiliza cookies para melhorar a sua experiência.</p>
-    </div>
-</footer>
-
-<!-- Bootstrap e ícones -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
