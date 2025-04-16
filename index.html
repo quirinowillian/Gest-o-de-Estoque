@@ -16,36 +16,9 @@
             
             <h1 class="text-center text-primary mb-4">Controle de Estoque</h1>
             
-            <div class="mb-4">
-                <label for="uploadExcel" class="form-label">Importar Planilha Excel</label>
-                <input type="file" id="uploadExcel" class="form-control">
-            </div>
-            
-            <div class="row g-3">
-                <div class="col-md-2">
-                    <input type="text" id="codigo" class="form-control" placeholder="Código">
-                </div>
-                <div class="col-md-3">
-                    <input type="text" id="nome" class="form-control" placeholder="Nome do Produto">
-                </div>
-                <div class="col-md-2">
-                    <input type="number" id="quantidade" class="form-control" placeholder="Quantidade">
-                </div>
-                <div class="col-md-2">
-                    <input type="date" id="fabricacao" class="form-control" placeholder="Fabricação">
-                </div>
-                <div class="col-md-2">
-                    <input type="date" id="validade" class="form-control" placeholder="Validade">
-                </div>
-                <div class="col-md-2">
-                    <input type="text" id="unidade" class="form-control" placeholder="Unidade">
-                </div>
-                <div class="col-md-2">
-                    <input type="text" id="lote" class="form-control" placeholder="Lote">
-                </div>
-                <div class="col-md-1 d-grid">
-                    <button class="btn btn-success" onclick="adicionarProdutoUI()">+</button>
-                </div>
+            <div class="mb-4 d-flex">
+                <input type="file" id="uploadExcel" class="form-control me-2">
+                <button class="btn btn-primary" onclick="buscarPlanilha()">Buscar</button>
             </div>
             
             <div class="mt-4">
@@ -57,6 +30,34 @@
                 <button class="btn btn-secondary" onclick="exportarParaWord()">Exportar para Word</button>
             </div>
             
+            <!-- FORMULÁRIO REORGANIZADO -->
+            <div class="row g-3 mt-4">
+                <div class="col-md-2">
+                    <input type="text" id="codigo" class="form-control" placeholder="Código">
+                </div>
+                <div class="col-md-3">
+                    <input type="text" id="nome" class="form-control" placeholder="Nome do Produto">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" id="fabricacao" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" id="validade" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <input type="text" id="lote" class="form-control" placeholder="Lote">
+                </div>
+                <div class="col-md-1">
+                    <input type="text" id="unidade" class="form-control" placeholder="UN">
+                </div>
+                <div class="col-md-2">
+                    <input type="number" id="quantidade" class="form-control" placeholder="Quantidade">
+                </div>
+                <div class="col-md-1 d-grid">
+                    <button class="btn btn-success" onclick="adicionarProdutoUI()">+</button>
+                </div>
+            </div>
+
             <div class="mt-4">
                 <h3>Lista de Produtos</h3>
                 <input type="text" id="search" class="form-control mb-3" placeholder="Buscar produto..." onkeyup="buscarProduto()">
@@ -65,11 +66,11 @@
                         <tr>
                             <th>Código</th>
                             <th>Nome</th>
-                            <th>Quantidade</th>
                             <th>Fabricação</th>
                             <th>Validade</th>
-                            <th>Unidade</th>
                             <th>Lote</th>
+                            <th>UN</th>
+                            <th>Quantidade</th>
                         </tr>
                     </thead>
                     <tbody id="listaProdutos"></tbody>
@@ -85,9 +86,6 @@
             <div class="social-links">
                 <a href="https://www.linkedin.com/in/willian-quirino-dev" target="_blank" class="text-white me-3">
                     <i class="bi bi-linkedin"></i> LinkedIn
-                </a>
-                <a href="https://github.com/quirinowillian" target="_blank" class="text-white">
-                    <i class="bi bi-github"></i> GitHub
                 </a>
             </div>
             <p class="mt-2 small">Esse site utiliza cookies para melhorar a sua experiência.</p>
