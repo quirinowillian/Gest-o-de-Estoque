@@ -5,96 +5,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Estoque</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border-radius: 15px; }
+        .table-responsive { max-height: 500px; overflow-y: auto; }
+        .btn-action { width: 80px; }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
         <div class="card shadow-lg p-4">
             <div class="text-center mb-4">
-                <img src="download.png" alt="logo" class="img-fluid" style="max-width: 250px; height: auto;">
+                <img src="download.png" alt="logo" class="img-fluid" style="max-width: 250px;">
             </div>
             
             <h1 class="text-center text-primary mb-4">Controle de Estoque</h1>
             
             <div class="mb-4 d-flex">
-                <input type="file" id="uploadExcel" class="form-control me-2">
-                <button class="btn btn-primary" onclick="importarPlanilha(event)">Buscar</button>
+                <input type="file" id="uploadExcel" class="form-control me-2" accept=".xlsx, .csv">
+                <button class="btn btn-primary" onclick="importarPlanilha()">
+                    <i class="bi bi-upload"></i> Importar
+                </button>
             </div>
             
             <div class="mt-4">
-                <h3>Relatórios</h3>
-                <p>Total de Produtos: <span id="totalProdutos">0</span></p>
-                <p>Produtos Vencidos: <span id="produtosVencidos">0</span></p>
-                <p>Produtos Próximos de Vencer: <span id="produtosProximos">0</span></p>
-                <button class="btn btn-primary" onclick="exportarParaExcel()">Exportar para Excel</button>
-                <button class="btn btn-secondary" onclick="exportarParaWord()">Exportar para Word</button>
+                <h3><i class="bi bi-clipboard-data"></i> Relatórios</h3>
+                <div class="row">
+                    <div class="col-md-4">
+                        <p>Total de Produtos: <span id="totalProdutos" class="badge bg-primary">0</span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p>Produtos Vencidos: <span id="produtosVencidos" class="badge bg-danger">0</span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p>Próximos de Vencer: <span id="produtosProximos" class="badge bg-warning">0</span></p>
+                    </div>
+                </div>
+                <button class="btn btn-success me-2" onclick="exportarParaExcel()">
+                    <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+                </button>
+                <button class="btn btn-info" onclick="exportarParaWord()">
+                    <i class="bi bi-file-earmark-word"></i> Exportar Word
+                </button>
             </div>
-            
-            <!-- FORMULÁRIO REORGANIZADO -->
+
             <div class="row g-3 mt-4">
                 <div class="col-md-2">
-                    <input type="text" id="codigo" class="form-control" placeholder="Código">
+                    <input type="text" id="codigo" class="form-control" placeholder="Código" required>
                 </div>
                 <div class="col-md-3">
-                    <input type="text" id="nome" class="form-control" placeholder="Nome do Produto">
+                    <input type="text" id="nome" class="form-control" placeholder="Nome do Produto" required>
                 </div>
                 <div class="col-md-2">
-                    <input type="date" id="fabricacao" class="form-control">
+                    <input type="date" id="fabricacao" class="form-control" required>
                 </div>
                 <div class="col-md-2">
-                    <input type="date" id="validade" class="form-control">
-                </div>
-                <div class="col-md-2">
-                    <input type="text" id="lote" class="form-control" placeholder="Lote">
+                    <input type="date" id="validade" class="form-control" required>
                 </div>
                 <div class="col-md-1">
-                    <input type="text" id="unidade" class="form-control" placeholder="UN">
+                    <input type="text" id="lote" class="form-control" placeholder="Lote" required>
                 </div>
-                <div class="col-md-2">
-                    <input type="number" id="quantidade" class="form-control" placeholder="Quantidade">
+                <div class="col-md-1">
+                    <input type="text" id="unidade" class="form-control" placeholder="UN" required>
                 </div>
-                <div class="col-md-1 d-grid">
-                    <button class="btn btn-success" onclick="adicionarProdutoUI()">+</button>
+                <div class="col-md-1">
+                    <input type="number" id="quantidade" class="form-control" placeholder="Qtd" min="0" required>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-primary" onclick="adicionarProdutoUI()">
+                        <i class="bi bi-plus-circle"></i> Adicionar
+                    </button>
                 </div>
             </div>
 
             <div class="mt-4">
-                <h3>Lista de Produtos</h3>
-                <input type="text" id="search" class="form-control mb-3" placeholder="Buscar produto..." onkeyup="buscarProduto()">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Código</th>
-                            <th>Nome</th>
-                            <th>Fabricação</th>
-                            <th>Validade</th>
-                            <th>Lote</th>
-                            <th>UN</th>
-                            <th>Quantidade</th>
-                        </tr>
-                    </thead>
-                    <tbody id="listaProdutos"></tbody>
-                </table>
+                <h3><i class="bi bi-list-ul"></i> Lista de Produtos</h3>
+                <input type="text" id="search" class="form-control mb-3" placeholder="Digite para buscar..." oninput="buscarProduto()">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>Fabricação</th>
+                                <th>Validade</th>
+                                <th>Lote</th>
+                                <th>UN</th>
+                                <th>Quantidade</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaProdutos"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 
-    <footer class="bg-dark text-white text-center p-4 mt-5">
+    <footer class="bg-dark text-white text-center p-3 mt-5">
         <div class="container">
-            <p>&copy; 2025 Controle de Estoque | Todos os direitos reservados.</p>
-            <p>Desenvolvido por <strong>Willian Quirino</strong></p>
+            <p class="mb-1">&copy; 2025 Controle de Estoque | Todos os direitos reservados.</p>
+            <p class="mb-1">Desenvolvido por <strong>Willian Quirino</strong></p>
             <div class="social-links">
                 <a href="https://www.linkedin.com/in/willian-quirino-dev" target="_blank" class="text-white me-3">
                     <i class="bi bi-linkedin"></i> LinkedIn
                 </a>
             </div>
-            <p class="mt-2 small">Esse site utiliza cookies para melhorar a sua experiência.</p>
         </div>
     </footer>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+
