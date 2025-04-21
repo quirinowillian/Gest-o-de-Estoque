@@ -1,106 +1,132 @@
-// Função para adicionar o produto via interface
-function adicionarProdutoUI() {
-    const codigo = document.getElementById("codigo").value.trim();
-    const nome = document.getElementById("nome").value.trim();
-    const quantidade = document.getElementById("quantidade").value.trim();
-    const fabricacao = document.getElementById("fabricacao").value;
-    const validade = document.getElementById("validade").value;
-    const unidade = document.getElementById("unidade").value.trim();
-    const lote = document.getElementById("lote").value.trim();
+// Array para armazenar os produtos
+let produtos = [];
 
-    // Validação para garantir que todos os campos sejam preenchidos
-    if (!codigo || !nome || !quantidade || !fabricacao || !validade || !unidade || !lote) {
-        alert("Por favor, preencha todos os campos.");
+// Função para carregar a página
+document.addEventListener('DOMContentLoaded', function() {
+    carregarProdutos();
+    atualizarEstatisticas();
+});
+
+// Função para importar planilha (VERSÃO CORRIGIDA)
+function importarPlanilha() {
+    const fileInput = document.getElementById('uploadExcel');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Por favor, selecione um arquivo primeiro!');
         return;
     }
 
-    const produto = { codigo, nome, quantidade: parseInt(quantidade), fabricacao, validade, unidade, lote };
-    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-    produtos.push(produto);
-    localStorage.setItem("produtos", JSON.stringify(produtos));
+    // Verifica se o arquivo tem a extensão .xlsx ou .csv
+    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.csv')) {
+        alert('Por favor, selecione um arquivo Excel (.xlsx) ou CSV.');
+        return;
+    }
 
-    atualizarListaProdutos();
-    atualizarRelatorios();
-    limparCampos();
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+            if (!verificarColunas(jsonData)) return; // Verifica se as colunas esperadas estão presentes
+
+            // Processa os dados da planilha
+            produtos = [];
+            jsonData.forEach(item => {
+                const produto = processarProduto(item);
+                if (produto) produtos.push(produto);
+            });
+
+            salvarProdutos();
+            carregarProdutos();
+            atualizarEstatisticas();
+            alert(`Importados ${produtos.length} produtos com sucesso!`);
+            
+        } catch (error) {
+            console.error('Erro na importação:', error);
+            alert('Erro ao importar o arquivo. Verifique o formato e tente novamente.');
+        }
+    };
+    
+    reader.onerror = function() {
+        alert('Erro ao ler o arquivo. Tente novamente.');
+    };
+    
+    reader.readAsArrayBuffer(file);
 }
 
-// Função para atualizar a lista de produtos na interface
-function atualizarListaProdutos() {
-    const listaProdutos = document.getElementById("listaProdutos");
-    listaProdutos.innerHTML = ""; // Limpa a lista de produtos
-    const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-
-    produtos.forEach((produto, index) => {
-        // Atribui um valor padrão caso algum campo esteja vazio
-        const codigo = produto.codigo || "N/A";
-        const nome = produto.nome || "N/A";
-        const quantidade = produto.quantidade || "0";
-        const fabricacao = produto.fabricacao || "N/A";
-        const validade = produto.validade || "N/A";
-        const unidade = produto.unidade || "N/A";
-        const lote = produto.lote || "N/A";
+// Função para formatar data (VERSÃO MELHORADA)
+function formatarData(data) {
+    if (!data) return '';
+    
+    if (data instanceof Date) {
+        const dia = String(data.getDate()).padStart(2, '0');
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const ano = data.getFullYear();
+        return `${dia}/${mes}/${ano}`;
+    }
+    
+    if (typeof data === 'string') {
+        if (data.match(/^\d{4}-\d{2}-\d{2}/)) {
+            const [ano, mes, dia] = data.split(' ')[0].split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
         
-        // Cria a linha da tabela com os dados do produto
-        const row = `<tr>
-            <td>${codigo}</td>
-            <td>${nome}</td>
-            <td>${fabricacao}</td>
-            <td>${validade}</td>
-            <td>${lote}</td>
-            <td>${unidade}</td>
-            <td>${quantidade}</td>
-            <td>
-                <button class="btn btn-warning btn-sm" onclick="prepararEdicao(${index})">Editar</button>
-                <button class="btn btn-danger btn-sm" onclick="removerProduto(${index})">Remover</button>
-            </td>
-        </tr>`;
+        if (!isNaN(data) && data > 0) {
+            const date = new Date((data - 25569) * 86400 * 1000);
+            return formatarData(date);
+        }
         
-        listaProdutos.innerHTML += row; // Adiciona a linha na tabela
-    });
+        if (data.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+            return data;
+        }
+    }
+    
+    return '';
 }
 
-// Função para preparar a edição de um produto
-function prepararEdicao(index) {
-    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-    let produto = produtos[index];
-    
-    document.getElementById("codigo").value = produto.codigo;
-    document.getElementById("nome").value = produto.nome;
-    document.getElementById("quantidade").value = produto.quantidade;
-    document.getElementById("fabricacao").value = produto.fabricacao;
-    document.getElementById("validade").value = produto.validade;
-    document.getElementById("unidade").value = produto.unidade;
-    document.getElementById("lote").value = produto.lote;
-    
-    document.getElementById("btnSalvar").onclick = function() {
-        editarProduto(index);
+// Função para processar dados do produto
+function processarProduto(item) {
+    const codigo = item['Código'] || '';
+    const nome = item['Nome'] || '';
+    const fabricacao = item['Fabricação'] || '';
+    const validade = item['Validade'] || '';
+    const lote = item['Lote'] || '';
+    const unidade = item['Unidade'] || '';
+    const quantidade = item['Quantidade'] || 0;
+
+    if (!codigo || !nome) {
+        console.warn('Produto sem código ou nome:', item);
+        return null; // Ignora produtos sem código ou nome
+    }
+
+    return {
+        codigo: codigo.toString().trim(),
+        nome: nome.toString().trim(),
+        fabricacao: formatarData(fabricacao),
+        validade: formatarData(validade),
+        lote: lote.toString().trim(),
+        unidade: unidade.toString().trim(),
+        quantidade: parseInt(quantidade) || 0
     };
 }
 
-// Função para editar um produto existente
-function editarProduto(index) {
-    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-    
-    produtos[index] = {
-        codigo: document.getElementById("codigo").value.trim(),
-        nome: document.getElementById("nome").value.trim(),
-        quantidade: parseInt(document.getElementById("quantidade").value.trim()),
-        fabricacao: document.getElementById("fabricacao").value,
-        validade: document.getElementById("validade").value,
-        unidade: document.getElementById("unidade").value.trim(),
-        lote: document.getElementById("lote").value.trim()
-    };
-    
-    localStorage.setItem("produtos", JSON.stringify(produtos));
-    atualizarListaProdutos();
-    atualizarRelatorios();
-    limparCampos();
+// Função para verificar se as colunas da planilha estão presentes
+function verificarColunas(planilha) {
+    const colunasEsperadas = ['Código', 'Nome', 'Fabricação', 'Validade', 'Lote', 'Unidade', 'Quantidade'];
+    const colunasPresentes = Object.keys(planilha[0]);
+    const faltaColunas = colunasEsperadas.filter(coluna => !colunasPresentes.includes(coluna));
+
+    if (faltaColunas.length > 0) {
+        alert('A planilha está faltando as seguintes colunas: ' + faltaColunas.join(', '));
+        return false;
+    }
+    return true;
 }
 
-// Função para remover um produto da lista
-function removerProduto(index) {
-    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-    produtos.splice(index, 1);
-    localStorage.setItem("produtos", JSON.stringify(produtos));
-    atualizarListaProdutos();
-   
+// Função para carregar produtos na tabela
