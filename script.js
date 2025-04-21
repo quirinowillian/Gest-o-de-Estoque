@@ -1,3 +1,4 @@
+// Função para adicionar o produto via interface
 function adicionarProdutoUI() {
     const codigo = document.getElementById("codigo").value.trim();
     const nome = document.getElementById("nome").value.trim();
@@ -7,6 +8,7 @@ function adicionarProdutoUI() {
     const unidade = document.getElementById("unidade").value.trim();
     const lote = document.getElementById("lote").value.trim();
 
+    // Validação para garantir que todos os campos sejam preenchidos
     if (!codigo || !nome || !quantidade || !fabricacao || !validade || !unidade || !lote) {
         alert("Por favor, preencha todos os campos.");
         return;
@@ -22,29 +24,45 @@ function adicionarProdutoUI() {
     limparCampos();
 }
 
+// Função para atualizar a lista de produtos na interface
 function atualizarListaProdutos() {
     const listaProdutos = document.getElementById("listaProdutos");
-    listaProdutos.innerHTML = "";
+    listaProdutos.innerHTML = ""; // Limpa a lista de produtos
     const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
 
+    // Ordenar produtos por nome
+    produtos.sort((a, b) => a.nome.localeCompare(b.nome));
+
     produtos.forEach((produto, index) => {
+        // Atribui um valor padrão caso algum campo esteja vazio
+        const codigo = produto.codigo || "N/A";
+        const nome = produto.nome || "N/A";
+        const quantidade = produto.quantidade || "0";
+        const fabricacao = produto.fabricacao || "N/A";
+        const validade = produto.validade || "N/A";
+        const unidade = produto.unidade || "N/A";
+        const lote = produto.lote || "N/A";
+        
+        // Cria a linha da tabela com os dados do produto
         const row = `<tr>
-            <td>${produto.codigo}</td>
-            <td>${produto.nome}</td>
-            <td>${produto.quantidade}</td>
-            <td>${produto.fabricacao}</td>
-            <td>${produto.validade}</td>
-            <td>${produto.unidade}</td>
-            <td>${produto.lote}</td>
+            <td>${codigo}</td>
+            <td>${nome}</td>
+            <td>${fabricacao}</td>
+            <td>${validade}</td>
+            <td>${lote}</td>
+            <td>${unidade}</td>
+            <td>${quantidade}</td>
             <td>
                 <button class="btn btn-warning btn-sm" onclick="prepararEdicao(${index})">Editar</button>
                 <button class="btn btn-danger btn-sm" onclick="removerProduto(${index})">Remover</button>
             </td>
         </tr>`;
-        listaProdutos.innerHTML += row;
+        
+        listaProdutos.innerHTML += row; // Adiciona a linha na tabela
     });
 }
 
+// Função para preparar a edição de um produto
 function prepararEdicao(index) {
     let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
     let produto = produtos[index];
@@ -62,6 +80,7 @@ function prepararEdicao(index) {
     };
 }
 
+// Função para editar um produto existente
 function editarProduto(index) {
     let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
     
@@ -81,6 +100,7 @@ function editarProduto(index) {
     limparCampos();
 }
 
+// Função para remover um produto da lista
 function removerProduto(index) {
     let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
     produtos.splice(index, 1);
@@ -89,16 +109,7 @@ function removerProduto(index) {
     atualizarRelatorios();
 }
 
-function atualizarRelatorios() {
-    const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-    document.getElementById("totalProdutos").innerText = produtos.length;
-    const hoje = new Date().toISOString().split("T")[0];
-    const vencidos = produtos.filter(p => p.validade < hoje).length;
-    const proximos = produtos.filter(p => p.validade >= hoje && new Date(p.validade) <= new Date(hoje).setDate(new Date(hoje).getDate() + 30)).length;
-    document.getElementById("produtosVencidos").innerText = vencidos;
-    document.getElementById("produtosProximos").innerText = proximos;
-}
-
+// Função para limpar os campos após adicionar/editar um produto
 function limparCampos() {
     document.getElementById("codigo").value = "";
     document.getElementById("nome").value = "";
@@ -108,66 +119,107 @@ function limparCampos() {
     document.getElementById("unidade").value = "";
     document.getElementById("lote").value = "";
 }
-function exportarParaExcel() {
-    const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-    if (produtos.length === 0) {
-        alert("Nenhum produto para exportar.");
-        return;
-    }
-    
-    const worksheet = XLSX.utils.json_to_sheet(produtos);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Estoque");
-    
-    XLSX.writeFile(workbook, "relatorio_estoque.xlsx");
+
+// Função para atualizar relatórios de produtos
+function atualizarRelatorios() {
+    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+    let totalProdutos = produtos.length;
+    let produtosVencidos = produtos.filter(produto => new Date(produto.validade) < new Date()).length;
+    let produtosProximos = produtos.filter(produto => new Date(produto.validade) <= new Date(new Date().setDate(new Date().getDate() + 30))).length;
+
+    document.getElementById("totalProdutos").textContent = totalProdutos;
+    document.getElementById("produtosVencidos").textContent = produtosVencidos;
+    document.getElementById("produtosProximos").textContent = produtosProximos;
 }
 
-function exportarParaWord() {
-    const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-    if (produtos.length === 0) {
-        alert("Nenhum produto para exportar.");
-        return;
-    }
-    
-    let conteudo = "RELATÓRIO DE ESTOQUE\n\n";
-    conteudo += "Código\tNome\tQuantidade\tFabricação\tValidade\tUN\tLote\n";
-    produtos.forEach(produto => {
-        conteudo += `${produto.codigo}\t${produto.nome}\t${produto.quantidade}\t${produto.fabricacao}\t${produto.validade}\t${produto.unidade}\t${produto.lote}\n`;
-    });
-    
-    const blob = new Blob([conteudo], { type: "application/msword" });
-    saveAs(blob, "relatorio_estoque.doc");
-}
-
+// Função para importar planilha Excel
 function importarPlanilha(event) {
-    const file = event.target.files[0];
+    let file = event.target.files[0];
     if (!file) return;
     
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet);
+    let reader = new FileReader();
+    reader.onload = function(e) {
+        let data = e.target.result;
+        let workbook = XLSX.read(data, { type: "binary" });
+        let sheet = workbook.Sheets[workbook.SheetNames[0]];
+        let rows = XLSX.utils.sheet_to_json(sheet);
         
-        let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
-        json.forEach(item => {
-            produtos.push({
-                codigo: item.Código || "",
-                nome: item["Nome do Produto"] || "",
-                quantidade: parseInt(item.Quantidade) || 0,
-                fabricacao: item.Fabricação || "",
-                validade: item.Validade || "",
-                unidade: item.UN || "",
-                lote: item.Lote || ""
-            });
+        rows.forEach(row => {
+            let produto = {
+                codigo: row["Código"],
+                nome: row["Nome"],
+                quantidade: row["Quantidade"],
+                fabricacao: row["Fabricação"],
+                validade: row["Validade"],
+                unidade: row["Unidade"],
+                lote: row["Lote"]
+            };
+            adicionarProduto(produto);
         });
-        
-        localStorage.setItem("produtos", JSON.stringify(produtos));
-        atualizarListaProdutos();
-        atualizarRelatorios();
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsBinaryString(file);
 }
 
-document.getElementById("uploadExcel").addEventListener("change", importarPlanilha);
+// Função para exportar os produtos para Excel
+function exportarParaExcel() {
+    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+    let ws = XLSX.utils.json_to_sheet(produtos);
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Produtos");
+    XLSX.writeFile(wb, "produtos.xlsx");
+}
+
+// Função para exportar os produtos para Word
+function exportarParaWord() {
+    let produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+    let doc = new Document();
+    
+    let table = new Table({
+        rows: produtos.map(produto => [
+            new TableCell({ children: [new TextRun(produto.codigo)] }),
+            new TableCell({ children: [new TextRun(produto.nome)] }),
+            new TableCell({ children: [new TextRun(produto.fabricacao)] }),
+            new TableCell({ children: [new TextRun(produto.validade)] }),
+            new TableCell({ children: [new TextRun(produto.lote)] }),
+            new TableCell({ children: [new TextRun(produto.unidade)] }),
+            new TableCell({ children: [new TextRun(produto.quantidade.toString())] })
+        ])
+    });
+    
+    doc.addSection({
+        children: [table]
+    });
+    
+    Packer.toBlob(doc).then(blob => {
+        saveAs(blob, "produtos.docx");
+    });
+}
+
+// Função para buscar um produto na lista
+function buscarProduto() {
+    const searchTerm = document.getElementById("search").value.toLowerCase();
+    const produtos = JSON.parse(localStorage.getItem("produtos")) || [];
+    const filteredProdutos = produtos.filter(produto => produto.nome.toLowerCase().includes(searchTerm));
+    
+    const listaProdutos = document.getElementById("listaProdutos");
+    listaProdutos.innerHTML = "";
+    
+    filteredProdutos.forEach(produto => {
+        const row = `<tr>
+            <td>${produto.codigo}</td>
+            <td>${produto.nome}</td>
+            <td>${produto.fabricacao}</td>
+            <td>${produto.validade}</td>
+            <td>${produto.lote}</td>
+            <td>${produto.unidade}</td>
+            <td>${produto.quantidade}</td>
+        </tr>`;
+        listaProdutos.innerHTML += row;
+    });
+}
+
+// Carregar produtos ao inicializar
+document.addEventListener("DOMContentLoaded", () => {
+    atualizarListaProdutos();
+    atualizarRelatorios();
+});
