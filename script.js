@@ -32,8 +32,6 @@ function importarPlanilha() {
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
             const jsonData = XLSX.utils.sheet_to_json(firstSheet);
 
-            console.log('Dados brutos da planilha:', jsonData); // Para debug
-
             if (jsonData.length === 0 || !verificarColunas(jsonData)) {
                 alert('Planilha vazia ou com formato incorreto!');
                 return;
@@ -66,7 +64,7 @@ function importarPlanilha() {
     reader.readAsArrayBuffer(file);
 }
 
-// Função melhorada para formatar datas
+// Função para formatar datas
 function formatarData(data) {
     if (!data) return '';
     
@@ -78,23 +76,21 @@ function formatarData(data) {
         return `${dia}/${mes}/${ano}`;
     }
     
-    // Se for string no formato ISO (2024-05-01 00:00:00)
-    if (typeof data === 'string') {
-        // Formato ISO (2024-05-01)
-        if (data.match(/^\d{4}-\d{2}-\d{2}/)) {
-            const [ano, mes, dia] = data.split(' ')[0].split('-');
-            return `${dia}/${mes}/${ano}`;
-        }
-        // Formato brasileiro (01/05/2024)
-        if (data.match(/^\d{2}\/\d{2}\/\d{4}/)) {
-            return data;
-        }
+    // Se for string no formato ISO (2024-05-01)
+    if (typeof data === 'string' && data.match(/^\d{4}-\d{2}-\d{2}/)) {
+        const [ano, mes, dia] = data.split(' ')[0].split('-');
+        return `${dia}/${mes}/${ano}`;
     }
     
     // Se for número serial do Excel
     if (!isNaN(data) && data > 0) {
         const date = new Date((data - 25569) * 86400 * 1000);
         return formatarData(date);
+    }
+    
+    // Se já estiver no formato brasileiro
+    if (typeof data === 'string' && data.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+        return data;
     }
     
     return '';
@@ -126,7 +122,7 @@ function processarProduto(item) {
     };
 }
 
-// Verifica se todas as colunas obrigatórias estão presentes
+// Verifica colunas obrigatórias
 function verificarColunas(planilha) {
     if (!planilha || planilha.length === 0) return false;
     
@@ -218,19 +214,18 @@ function adicionarProdutoUI() {
         alert('Código e Nome são obrigatórios!');
         return;
     }
-    
+
     const produto = {
-        codigo: codigo,
-        nome: nome,
+        codigo: codigo.toString().trim(),
+        nome: nome.toString().trim(),
         fabricacao: document.getElementById('fabricacao').value,
         validade: document.getElementById('validade').value,
-        lote: document.getElementById('lote').value,
-        unidade: document.getElementById('unidade').value || 'UN',
+        lote: document.getElementById('lote').value.toString().trim(),
+        unidade: document.getElementById('unidade').value.toString().trim() || 'UN',
         quantidade: parseInt(document.getElementById('quantidade').value) || 0
     };
-    
+
     produtos.push(produto);
-    // Mantém a lista ordenada após adicionar novo produto
     produtos.sort((a, b) => a.nome.localeCompare(b.nome));
     salvarProdutos();
     carregarProdutos();
